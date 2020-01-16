@@ -35,9 +35,7 @@ bot.start();
 
 function check_account(msg) {
   let lastStatus;
-  const params = {
-    sessioonId: '0C939A002A7AE3F1783E4363AB2961E7',
-    'X-CSRF-TOKEN': 'D61C1CC41D7CBBC3249F56A5D6E525B6'};
+  const params = parseUrl(msg);
   vostokService.getAccount(params)
     .then(res => {
       lastStatus = res.data
@@ -48,7 +46,7 @@ function check_account(msg) {
   setInterval(() => {
     vostokService.getAccount(params)
       .then(res => {
-        if (res.data !== lastStatus) {
+        if (res.data.length !== lastStatus.length || compare(res.data, lastStatus)) {
           msg.reply.text(res.data);
         }
         lastStatus = res.data
@@ -58,4 +56,19 @@ function check_account(msg) {
       });
     }, 60000);
 
+}
+
+function parseUrl(url) {
+  const res = /'(https:\/\/ubank.bankvostok\.com\.ua\/\w+.+;jsessionid=\w+).+X-CSRF-TOKEN:\s*(\w+)/.exec(url.text);
+  if (res.length > 2) {
+    return {
+      url: res[1],
+      'X-CSRF-TOKEN': res[2]
+    }
+  }
+  return null
+}
+
+function compare(data1, data2) {
+  return true
 }
