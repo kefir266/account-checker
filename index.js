@@ -27,8 +27,6 @@ const bot = new TeleBot({
   }
 });
 
-bot.on('text', (msg) => msg.reply.text(msg.text));
-
 bot.on(['/start', '/hello'], check_account);
 
 bot.start();
@@ -38,7 +36,8 @@ function check_account(msg) {
   const params = parseUrl(msg);
   vostokService.getAccount(params)
     .then(res => {
-      lastStatus = res.data
+      lastStatus = res;
+      console.log(res);
     })
     .catch((err) => {
       console.error(err);
@@ -46,8 +45,8 @@ function check_account(msg) {
   setInterval(() => {
     vostokService.getAccount(params)
       .then(res => {
-        if (res.data.length !== lastStatus.length || compare(res.data, lastStatus)) {
-          msg.reply.text(res.data);
+        if (res.length !== lastStatus.length && compare(res, lastStatus)) {
+          msg.reply.text(res);
         }
         lastStatus = res.data
       })
@@ -59,11 +58,12 @@ function check_account(msg) {
 }
 
 function parseUrl(url) {
-  const res = /'(https:\/\/ubank.bankvostok\.com\.ua\/\w+.+;jsessionid=\w+).+X-CSRF-TOKEN:\s*(\w+)/.exec(url.text);
-  if (res.length > 2) {
+  const res = /('(https:\/\/ubank.bankvostok\.com\.ua\/\w+.+;jsessionid=\w+).+X-CSRF-TOKEN:\s*(\w+).+)/.exec(url.text);
+  if (res && res.length > 2) {
     return {
-      url: res[1],
-      'X-CSRF-TOKEN': res[2]
+      fullArgs: res[1],
+      url: res[2],
+      'X-CSRF-TOKEN': res[3]
     }
   }
   return null
