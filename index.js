@@ -1,8 +1,12 @@
 const TeleBot = require('telebot');
 const vostokService = require('./vostok-service');
+require('dotenv').config({ path: `${__dirname}/.env` });
 
+const REQUEST_TIME_INTERVAL = process.env.REQUEST_TIME_INTERVAL || 60000;
+
+let idSetInterval;
 const bot = new TeleBot({
-  token: '331602050:AAFskBjFM-AeIwHph5-suhx_IMaMuJwzBgc', // Required. Telegram Bot API token.
+  token: process.env.TOKEN || '', // Required. Telegram Bot API token.
   polling: { // Optional. Use polling.
     interval: 1000, // Optional. How often check updates (in ms).
     timeout: 0, // Optional. Update polling timeout (0 - short polling).
@@ -33,32 +37,44 @@ bot.start();
 
 function check_account(msg) {
   let lastStatus;
-  const params = parseUrl(msg);
+  const message = msg.text.split(' ');
+  if (message.length !==2) {
+    msg.reply.text('Bad request');
+    return;
+  }
+  const params = parseUrl(Buffer.from(message[1], 'base64').toString());
+  if (!params) {
+    msg.reply.text('Bad request');
+    return;
+  }
   vostokService.getAccount(params)
     .then(res => {
       lastStatus = res;
-      console.log(res);
     })
     .catch((err) => {
       console.error(err);
     });
-  setInterval(() => {
+
+  if (idSetInterval) {
+    clearInterval(idSetInterval);
+  }
+  idSetInterval = setInterval(() => {
     vostokService.getAccount(params)
       .then(res => {
-        if (res.length !== lastStatus.length && compare(res, lastStatus)) {
+        if (res && lastStatus && res.length !== lastStatus.length && res.localeCompare(lastStatus) === 0) {
           msg.reply.text(res);
         }
-        lastStatus = res.data
+        lastStatus = res
       })
       .catch((err) => {
         console.error(err);
       });
-    }, 60000);
+    }, REQUEST_TIME_INTERVAL);
 
 }
 
 function parseUrl(url) {
-  const res = /('(https:\/\/ubank.bankvostok\.com\.ua\/\w+.+;jsessionid=\w+).+X-CSRF-TOKEN:\s*(\w+).+)/.exec(url.text);
+  const res = /('(https:\/\/ubank.bankvostok\.com\.ua\/\w+.+;jsessionid=\w+).+X-CSRF-TOKEN:\s*(\w+).+)/.exec(url);
   if (res && res.length > 2) {
     return {
       fullArgs: res[1],
@@ -67,8 +83,4 @@ function parseUrl(url) {
     }
   }
   return null
-}
-
-function compare(data1, data2) {
-  return true
 }

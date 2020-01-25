@@ -22,15 +22,11 @@ module.exports.getAccount = function (params) {
   // };
   // return axios(request)
   return new Promise((resolve) => {
-    let response = '';
-    const command = `curl ${params.fullArgs}\n`;
+    const command = `curl ${params.fullArgs}`;
     console.log(command);
     exec(command, function (error, stdout, stderr) {
       console.log(stdout);
-      response = stdout;
       resolve(stdout);
     });
-    resolve(command);
-
   });
 };

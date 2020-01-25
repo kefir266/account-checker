@@ -1,0 +1,8 @@
+version: '3.2'
+services:
+  telegram-bot:
+    container_name: telegram-bot
+    build:
+      context: .
+    environment:
+      REQUEST_TIME_INTERVAL: 60000
