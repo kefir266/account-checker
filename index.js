@@ -4,6 +4,7 @@ require('dotenv').config({ path: `${__dirname}/.env` });
 
 const REQUEST_TIME_INTERVAL = process.env.REQUEST_TIME_INTERVAL || 60000;
 
+let lastStatus;
 let idSetInterval;
 const bot = new TeleBot({
   token: process.env.TOKEN || '', // Required. Telegram Bot API token.
@@ -32,11 +33,15 @@ const bot = new TeleBot({
 });
 
 bot.on(['/start', '/hello'], check_account);
+bot.on(['check_healthy'], (msg) => {
+  msg.reply.text(`All right! I'm healty! Last status: ${lastStatus}`);
+});
 
 bot.start();
 
 function check_account(msg) {
-  let lastStatus;
+
+  clearInterval(idSetInterval);
   const message = msg.text.split(' ');
   if (message.length !==2) {
     msg.reply.text('Bad request');
