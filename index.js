@@ -35,6 +35,7 @@ const bot = new TeleBot({
 
 bot.on(['/start', '/hello'], check_account);
 bot.on(['/check-healthy'], (msg) => {
+  console.log(msg.text);
   if (lastStatus) {
     msg.reply.text(`All right! I'm healty! Last status: ${lastStatus} at ${lastSuccess}`);
   } else {
@@ -46,6 +47,7 @@ bot.start();
 
 function check_account(msg) {
 
+  console.log(msg.text);
   const chat = msg.chat.id;
 
   clearInterval(idSetInterval);
@@ -62,8 +64,10 @@ function check_account(msg) {
   vostokService.getAccount(params)
     .then(res => {
       lastStatus = res;
+      msg.reply.text(res);
     })
     .catch((err) => {
+      msg.reply.text(err);
       console.error(err);
     });
 
@@ -76,7 +80,7 @@ function check_account(msg) {
         if (res && lastStatus && res.length !== lastStatus.length && res.localeCompare(lastStatus) === 0) {
           bot.sendMessage(chat.id, res);
         }
-        lastStatus = res
+        lastStatus = res;
         lastSuccess = new Date();
       })
       .catch((err) => {
