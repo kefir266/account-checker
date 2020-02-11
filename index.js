@@ -5,6 +5,7 @@ require('dotenv').config({ path: `${__dirname}/.env` });
 const REQUEST_TIME_INTERVAL = process.env.REQUEST_TIME_INTERVAL || 60000;
 
 let lastStatus;
+let lastSuccess;
 let idSetInterval;
 const bot = new TeleBot({
   token: process.env.TOKEN || '', // Required. Telegram Bot API token.
@@ -33,13 +34,19 @@ const bot = new TeleBot({
 });
 
 bot.on(['/start', '/hello'], check_account);
-bot.on(['check_healthy'], (msg) => {
-  msg.reply.text(`All right! I'm healty! Last status: ${lastStatus}`);
+bot.on(['/check-healthy'], (msg) => {
+  if (lastStatus) {
+    msg.reply.text(`All right! I'm healty! Last status: ${lastStatus} at ${lastSuccess}`);
+  } else {
+    msg.reply.text('There aren\'t last status');
+  }
 });
 
 bot.start();
 
 function check_account(msg) {
+
+  const chat = msg.chat.id;
 
   clearInterval(idSetInterval);
   const message = msg.text.split(' ');
@@ -67,9 +74,10 @@ function check_account(msg) {
     vostokService.getAccount(params)
       .then(res => {
         if (res && lastStatus && res.length !== lastStatus.length && res.localeCompare(lastStatus) === 0) {
-          msg.reply.text(res);
+          bot.sendMessage(chat.id, res);
         }
         lastStatus = res
+        lastSuccess = new Date();
       })
       .catch((err) => {
         console.error(err);
