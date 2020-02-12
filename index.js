@@ -48,7 +48,7 @@ bot.start();
 function check_account(msg) {
 
   console.log(msg.text);
-  const chat = msg.chat.id;
+  const chat = msg.chat;
 
   clearInterval(idSetInterval);
   const message = msg.text.split(' ');
@@ -77,10 +77,22 @@ function check_account(msg) {
   idSetInterval = setInterval(() => {
     vostokService.getAccount(params)
       .then(res => {
-        if (res && lastStatus && res.length !== lastStatus.length && res !== lastStatus) {
+        if (res && lastStatus && res !== lastStatus) {
+          bot.sendMessage(chat.id, 'BINGO!!!!!!!!');
           console.log('============================BINGO========================================');
           console.log(res);
-          bot.sendMessage(chat.id, res);
+          try {
+            if (typeof res === 'string' && res.length > 0) {
+              const obj = JSON.parse(res);
+              const info = getFieldValues(obj);
+              console.log(info);
+              bot.sendMessage(chat.id, info);
+            }
+          } catch (e) {
+            console.error();
+            bot.sendMessage(chat.id, res);
+          }
+          bot.sendMessage(chat.id, 'BINGO!!!!!!!!');
         }
         lastStatus = res;
         lastSuccess = new Date();
@@ -102,4 +114,19 @@ function parseUrl(url) {
     }
   }
   return null
+}
+
+function getFieldValues(obj, counter = 0) {
+  let res = '';
+
+  for (let field in obj) {
+    if (typeof obj[field] === 'object') {
+      if (counter < 5) {
+        res = `${res}  \n\n ${field}: ` + getFieldValues(obj[field], counter + 1);
+      }
+    } else {
+      res = `${res}  \n ${field}: ${obj[field]}`
+    }
+  }
+  return res;
 }
