@@ -77,7 +77,9 @@ function check_account(msg) {
   idSetInterval = setInterval(() => {
     vostokService.getAccount(params)
       .then(res => {
-        if (res && lastStatus && res.length !== lastStatus.length && res.localeCompare(lastStatus) === 0) {
+        if (res && lastStatus && res.length !== lastStatus.length && res !== lastStatus) {
+          console.log('============================BINGO========================================');
+          console.log(res);
           bot.sendMessage(chat.id, res);
         }
         lastStatus = res;
