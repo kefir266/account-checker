@@ -43,6 +43,12 @@ bot.on(['/check-healthy'], (msg) => {
   }
 });
 
+bot.on(['/stop'], (msg) => {
+  console.log('Stopped retrieving account status');
+  clearInterval(idSetInterval);
+  msg.reply.text('Retrieving account status ia stopped');
+});
+
 bot.start();
 
 function check_account(msg) {
