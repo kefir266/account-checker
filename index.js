@@ -1,3 +1,4 @@
+const fs = require('fs');
 const TeleBot = require('telebot');
 const vostokService = require('./vostok-service');
 require('dotenv').config({ path: `${__dirname}/.env` });
@@ -7,6 +8,12 @@ const REQUEST_TIME_INTERVAL = process.env.REQUEST_TIME_INTERVAL || 60000;
 let lastStatus;
 let lastSuccess;
 let idSetInterval;
+const FILE_NAME = process.env.FILE_NAME || 'last_request';
+let lastRequest;
+
+if (fs.existsSync(FILE_NAME)) {
+  lastRequest = fs.readFileSync(FILE_NAME, 'base64');
+}
 const bot = new TeleBot({
   token: process.env.TOKEN || '', // Required. Telegram Bot API token.
   polling: { // Optional. Use polling.
@@ -33,7 +40,15 @@ const bot = new TeleBot({
   }
 });
 
-bot.on(['/start', '/hello'], check_account);
+bot.on(['/hello'], (msg) => {
+  console.log('/hello ', msg.text);
+  if (lastRequest) {
+    msg.text = lastRequest;
+    check_account(msg);
+  }
+});
+
+bot.on(['/start'], check_account);
 bot.on(['/check-healthy'], (msg) => {
   console.log(msg.text);
   if (lastStatus) {
@@ -46,6 +61,11 @@ bot.on(['/check-healthy'], (msg) => {
 bot.on(['/stop'], (msg) => {
   console.log('Stopped retrieving account status');
   clearInterval(idSetInterval);
+  try {
+    fs.unlinkSync(FILE_NAME);
+  } catch (e) {
+    console.error(e);
+  }
   msg.reply.text('Retrieving account status ia stopped');
 });
 
@@ -53,12 +73,12 @@ bot.start();
 
 function check_account(msg) {
 
-  console.log(msg.text);
+  console.log('check_account ----------- ', msg.text);
   const chat = msg.chat;
 
   clearInterval(idSetInterval);
   const message = msg.text.split(' ');
-  if (message.length !==2) {
+  if (message.length !== 2) {
     msg.reply.text('Bad request');
     return;
   }
@@ -67,6 +87,8 @@ function check_account(msg) {
     msg.reply.text('Bad request');
     return;
   }
+
+  fs.writeSync(FILE_NAME, msg.text, { mode: 0o700 });
   vostokService.getAccount(params)
     .then(res => {
       lastStatus = res;
@@ -106,7 +128,7 @@ function check_account(msg) {
       .catch((err) => {
         console.error(err);
       });
-    }, REQUEST_TIME_INTERVAL);
+  }, REQUEST_TIME_INTERVAL);
 
 }
 
