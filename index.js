@@ -62,7 +62,9 @@ bot.on(['/stop'], (msg) => {
   console.log('Stopped retrieving account status');
   clearInterval(idSetInterval);
   try {
-    fs.unlinkSync(FILE_NAME);
+    if (fs.existsSync(FILE_NAME)) {
+      fs.unlinkSync(FILE_NAME);
+    }
   } catch (e) {
     console.error(e);
   }
@@ -88,7 +90,15 @@ function check_account(msg) {
     return;
   }
 
-  fs.writeSync(FILE_NAME, msg.text, { mode: 0o700 });
+  try {
+    fs.writeFileSync(FILE_NAME, msg.text, {
+      encoding: 'base64',
+      mode: '0o700',
+      flag: 'w'
+    });
+  } catch (e) {
+    console.error(e);
+  }
   vostokService.getAccount(params)
     .then(res => {
       lastStatus = res;
